@@ -1,11 +1,9 @@
 using System;
 using System.Linq;
+using DevExpress.ExpressApp.Model;
 using DevExpress.Persistent.Base;
 using DevExpress.Persistent.BaseImpl;
 using DevExpress.Xpo;
-using DevExpress.ExpressApp.Model;
-using System.Collections.Generic;
-using DevExpress.Persistent.Base.General;
 
 namespace Solution1.Module.BusinessObjects
 {
@@ -17,7 +15,7 @@ namespace Solution1.Module.BusinessObjects
         { }
 
         private string _CurrencyList;
-        [ModelDefault("PropertyEditorType", "Solution1.Module.Web.SerializedLookupPropertyEditor")]
+        [ModelDefault("PropertyEditorType", "Solution1.Module.Web.CurrencyListPropertyEditor")]
         public string CurrencyList
         {
             get
@@ -27,6 +25,20 @@ namespace Solution1.Module.BusinessObjects
             set
             {
                 SetPropertyValue("CurrencyList", ref _CurrencyList, value);
+            }
+        }
+
+        private string _CurrencyList2;
+        [ModelDefault("PropertyEditorType", "Solution1.Module.Web.CurrencyListPropertyEditor")]
+        public string CurrencyList2
+        {
+            get
+            {
+                return _CurrencyList2;
+            }
+            set
+            {
+                SetPropertyValue("CurrencyList2", ref _CurrencyList2, value);
             }
         }
 

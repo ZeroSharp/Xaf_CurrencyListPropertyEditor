@@ -8,16 +8,20 @@ using DevExpress.ExpressApp.Model;
 using DevExpress.ExpressApp.Web.Editors.ASPx;
 using DevExpress.Web.ASPxEditors;
 using Solution1.Module.BusinessObjects;
+using System.Collections.Generic;
+using DevExpress.Xpo;
 
 namespace Solution1.Module.Web
 {
-    class CurrencyListBoxTemplate : ASPxListBox, ITemplate
+    public class CurrencyListBoxTemplate : ASPxListBox, ITemplate
     {
         public CurrencyListBoxTemplate()
         {
             SelectionMode = ListEditSelectionMode.CheckColumn;
             EnableClientSideAPI = true;
             Width = Unit.Percentage(100.0);
+            Height = 300;
+            //EnableTheming = true;
         }
 
         private string _DropDownId;
@@ -38,17 +42,17 @@ namespace Solution1.Module.Web
 
             ClientSideEvents.SelectedIndexChanged =
                 @"function (s, args) {
-                        var listBox = ASPxClientControl.Cast(s);
-                        var checkComboBox = ASPxClientControl.Cast(" + _DropDownId + @");
+                    var listBox = ASPxClientControl.Cast(s);
+                    var checkComboBox = ASPxClientControl.Cast(" + _DropDownId + @");
 
-                        var selectedItems = listBox.GetSelectedItems();
+                    var selectedItems = listBox.GetSelectedItems();
 
-                        var values = [];
-                        for(var i = 0; i < selectedItems.length; i++)
-                            values.push(selectedItems[i].value);
+                    var values = [];
+                    for(var i = 0; i < selectedItems.length; i++)
+                        values.push(selectedItems[i].value);
 
-                        checkComboBox.SetText(values.join(','));
-                    }";
+                    checkComboBox.SetText(values.join(','));
+                }";
         }
 
         public void SetDropDownId(string id)
@@ -66,14 +70,25 @@ namespace Solution1.Module.Web
     }
 
     [PropertyEditor(typeof(String), false)]
-    public class SerializedLookupPropertyEditor : ASPxStringPropertyEditor, IComplexViewItem
+    public class CurrencyListPropertyEditor : ASPxStringPropertyEditor, IComplexViewItem
     {
-        ASPxDropDownEdit _DropDownControl;
-        CurrencyListBoxTemplate _CurrencyListBoxTemplate;
-        
-        public SerializedLookupPropertyEditor(
-        Type objectType, IModelMemberViewItem info)
+        public IObjectSpace ObjectSpace { get; private set; }
+
+        public CurrencyListPropertyEditor(Type objectType, IModelMemberViewItem info)
             : base(objectType, info) { }
+
+        ASPxDropDownEdit _DropDownControl;
+        
+        private CurrencyListBoxTemplate _CurrencyListBoxTemplate;
+        public CurrencyListBoxTemplate CurrencyListBoxTemplate
+        {
+            get
+            {
+                if (_CurrencyListBoxTemplate == null)
+                    _CurrencyListBoxTemplate = new CurrencyListBoxTemplate();
+                return _CurrencyListBoxTemplate;
+            }
+        }
 
         protected override WebControl CreateEditModeControlCore()
         {
@@ -82,23 +97,38 @@ namespace Solution1.Module.Web
             _DropDownControl = new ASPxDropDownEdit();
             _DropDownControl.ValueChanged += new EventHandler(ExtendedEditValueChangedHandler);
             _DropDownControl.EnableClientSideAPI = true;
-            _DropDownControl.DropDownWindowTemplate = _CurrencyListBoxTemplate;
-            _DropDownControl.ClientInstanceName = "dodo";
-            _CurrencyListBoxTemplate.SetDropDownId(_DropDownControl.ClientInstanceName);
-            _CurrencyListBoxTemplate.SetValue(PropertyValue.ToString());
-          
+            _DropDownControl.DropDownWindowTemplate = CurrencyListBoxTemplate;
+            _DropDownControl.ClientInstanceName = "CurrencyListPropertyEditor_" + PropertyName;
+            //_DropDownControl.EnableTheming = true;
+
+            CurrencyListBoxTemplate.SetDropDownId(_DropDownControl.ClientInstanceName);
+
+            CurrencyListBoxTemplate.Items.Clear();
+
+            var Currencies = ObjectSpace
+                .GetObjects<Currency>()
+                .OrderBy(x => x.Code);
+
+            foreach (Currency currency in Currencies)
+            {
+                CurrencyListBoxTemplate.Items.Add(currency.Code + "\t" + currency.Name, currency.Code);
+            }
+
+            if (PropertyValue != null)
+                CurrencyListBoxTemplate.SetValue(PropertyValue.ToString());
+
             return _DropDownControl;
         }
 
         protected override void ApplyReadOnly()
         {
-            if (_CurrencyListBoxTemplate != null)
+            if (CurrencyListBoxTemplate != null)
             {
-                _CurrencyListBoxTemplate.ReadOnly = (bool)!base.AllowEdit;
+                CurrencyListBoxTemplate.ReadOnly = (bool)!base.AllowEdit;
             }
             if (_DropDownControl != null)
             {
-                _DropDownControl.ReadOnly = (bool) !base.AllowEdit;
+                _DropDownControl.ReadOnly = (bool)!base.AllowEdit;
             }
         }
 
@@ -108,24 +138,19 @@ namespace Solution1.Module.Web
             {
                 _DropDownControl.ValueChanged -= new EventHandler(ExtendedEditValueChangedHandler);
             }
+
+            if (_CurrencyListBoxTemplate != null)
+            {
+                _CurrencyListBoxTemplate.Dispose();
+                _CurrencyListBoxTemplate = null;
+            }
+
             base.BreakLinksToControl(unwireEventsOnly);
         }
-
+       
         public void Setup(IObjectSpace objectSpace, XafApplication application)
         {
-            _CurrencyListBoxTemplate = new CurrencyListBoxTemplate();
-
-            var listbox = _CurrencyListBoxTemplate;
-            _CurrencyListBoxTemplate.Items.Clear();
-
-            var currencies = objectSpace
-                .GetObjects<Currency>()
-                .OrderBy(x => x.Code);
-
-            foreach (Currency currency in currencies)
-            {
-                _CurrencyListBoxTemplate.Items.Add(currency.Code + "\t" + currency.Name, currency.Code);
-            }
+            ObjectSpace = objectSpace;
         }
 
         protected override void Dispose(bool disposing)
@@ -134,7 +159,7 @@ namespace Solution1.Module.Web
             {
                 if (disposing)
                 {
-                    if (this._CurrencyListBoxTemplate != null)
+                    if (_CurrencyListBoxTemplate != null)
                     {
                         _CurrencyListBoxTemplate.Dispose();
                         _CurrencyListBoxTemplate = null;
