@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -11,9 +12,9 @@ using Solution1.Module.BusinessObjects;
 
 namespace Solution1.Module.Web
 {
-    public class CurrencyListBoxTemplate : ASPxListBox, ITemplate
+    public class SerializedListBoxTemplate : ASPxListBox, ITemplate
     {
-        public CurrencyListBoxTemplate()
+        public SerializedListBoxTemplate()
         {
             SelectionMode = ListEditSelectionMode.CheckColumn;
             EnableClientSideAPI = true;
@@ -66,74 +67,73 @@ namespace Solution1.Module.Web
         }
     }
 
-    [PropertyEditor(typeof(String), false)]
-    public class CurrencyListPropertyEditor : ASPxPropertyEditor, IComplexViewItem
+    public abstract class SerializedListPropertyEditor<T> : ASPxPropertyEditor, IComplexViewItem
     {
-        public IObjectSpace ObjectSpace { get; private set; }
-
-        public CurrencyListPropertyEditor(Type objectType, IModelMemberViewItem info)
+        public SerializedListPropertyEditor(Type objectType, IModelMemberViewItem info)
             : base(objectType, info) { }
 
-        ASPxDropDownEdit _DropDownControl;
-        
-        private CurrencyListBoxTemplate _CurrencyListBoxTemplate;
-        public CurrencyListBoxTemplate CurrencyListBoxTemplate
+        protected abstract IEnumerable<T> GetDataSource();
+        protected abstract string GetDisplayText(T item);
+        protected abstract string GetDisplayValue(T item);
+
+        public IObjectSpace ObjectSpace { get; private set; }
+        public ASPxDropDownEdit DropDownControl { get; private set; }
+
+        private SerializedListBoxTemplate _ListBoxTemplate;
+        public SerializedListBoxTemplate ListBoxTemplate
         {
             get
             {
-                if (_CurrencyListBoxTemplate == null)
-                    _CurrencyListBoxTemplate = new CurrencyListBoxTemplate();
-                return _CurrencyListBoxTemplate;
+                if (_ListBoxTemplate == null)
+                    _ListBoxTemplate = new SerializedListBoxTemplate();
+                return _ListBoxTemplate;
             }
         }
 
         protected override WebControl CreateEditModeControlCore()
         {
-            _DropDownControl = new ASPxDropDownEdit();
-            _DropDownControl.ValueChanged += new EventHandler(ExtendedEditValueChangedHandler);
-            _DropDownControl.EnableClientSideAPI = true;
-            _DropDownControl.DropDownWindowTemplate = CurrencyListBoxTemplate;
-            _DropDownControl.ClientInstanceName = "CurrencyListPropertyEditor_" + PropertyName;
-            _DropDownControl.ReadOnly = true;
+            DropDownControl = new ASPxDropDownEdit();
+            DropDownControl.ValueChanged += new EventHandler(ExtendedEditValueChangedHandler);
+            DropDownControl.EnableClientSideAPI = true;
+            DropDownControl.DropDownWindowTemplate = ListBoxTemplate;
+            DropDownControl.ClientInstanceName = "ListPropertyEditor_" + PropertyName;
+            DropDownControl.ReadOnly = true;
 
-            CurrencyListBoxTemplate.SetDropDownId(_DropDownControl.ClientInstanceName);
+            ListBoxTemplate.SetDropDownId(DropDownControl.ClientInstanceName);
 
-            CurrencyListBoxTemplate.Items.Clear();
+            ListBoxTemplate.Items.Clear();
 
-            var Currencies = ObjectSpace
-                .GetObjects<Currency>()
-                .OrderBy(x => x.Code);
-
-            foreach (Currency currency in Currencies)
+            IEnumerable<T> datasource = GetDataSource();
+            foreach (T item in datasource)
             {
-                CurrencyListBoxTemplate.Items.Add(currency.Code + "\t" + currency.Name, currency.Code);
+                ListBoxTemplate.Items.Add(GetDisplayText(item), GetDisplayValue(item));
             }
 
             if (PropertyValue != null)
-                CurrencyListBoxTemplate.SetValue(PropertyValue.ToString());
+                ListBoxTemplate.SetValue(PropertyValue.ToString());
 
-            return _DropDownControl;
+            return DropDownControl;
         }
 
         protected override void ApplyReadOnly()
         {
-            if (CurrencyListBoxTemplate != null)
+            if (DropDownControl != null)
             {
-                CurrencyListBoxTemplate.ReadOnly = !base.AllowEdit;
+                DropDownControl.Enabled = !AllowEdit;
             }
         }
 
         public override void BreakLinksToControl(bool unwireEventsOnly)
         {
-            if (_DropDownControl != null)
+            if (DropDownControl != null)
             {
-                _DropDownControl.ValueChanged -= new EventHandler(ExtendedEditValueChangedHandler);
+                DropDownControl.ValueChanged -= new EventHandler(ExtendedEditValueChangedHandler);
             }
 
-            if (_CurrencyListBoxTemplate != null)
+            if (_ListBoxTemplate != null)
             {
-                _CurrencyListBoxTemplate.Dispose();
-                _CurrencyListBoxTemplate = null;
+                _ListBoxTemplate.Dispose();
+                _ListBoxTemplate = null;
             }
 
             base.BreakLinksToControl(unwireEventsOnly);
@@ -150,15 +150,15 @@ namespace Solution1.Module.Web
             {
                 if (disposing)
                 {
-                    if (_CurrencyListBoxTemplate != null)
+                    if (_ListBoxTemplate != null)
                     {
-                        _CurrencyListBoxTemplate.Dispose();
-                        _CurrencyListBoxTemplate = null;
+                        _ListBoxTemplate.Dispose();
+                        _ListBoxTemplate = null;
                     }
-                    if (_DropDownControl != null)
+                    if (DropDownControl != null)
                     {
-                        _DropDownControl.Dispose();
-                        _DropDownControl = null;
+                        DropDownControl.Dispose();
+                        DropDownControl = null;
                     }
                 }
             }
@@ -166,6 +166,30 @@ namespace Solution1.Module.Web
             {
                 base.Dispose(disposing);
             }
+        }
+    }
+
+    [PropertyEditor(typeof(String), false)]
+    public class CurrencyListPropertyEditor : SerializedListPropertyEditor<Currency>
+    {
+        public CurrencyListPropertyEditor(Type objectType, IModelMemberViewItem info)
+            : base(objectType, info) { }
+
+        protected override IEnumerable<Currency> GetDataSource() 
+        {
+            return ObjectSpace
+                .GetObjects<Currency>()
+                .OrderBy(x => x.Code);
+        }
+
+        protected override string GetDisplayText(Currency currency)
+        {
+            return currency.Code + "\t" + currency.Name;
+        }
+
+        protected override string GetDisplayValue(Currency currency)
+        {
+            return currency.Code;
         }
     }
 }
