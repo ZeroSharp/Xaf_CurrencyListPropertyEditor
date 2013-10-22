@@ -54,7 +54,7 @@ namespace Solution1.Module.DatabaseUpdate
             if (container == null)
             {
                 container = ObjectSpace.CreateObject<Container>();
-                container.CurrencyList = "USD,GBP,CHF";
+                container.CurrencyList = "CHF,GBP,USD";
                 container.CurrencyListWithCriteria = "SEK";
                 container.CurrencyListWithDataSource = "CHF";
             }                

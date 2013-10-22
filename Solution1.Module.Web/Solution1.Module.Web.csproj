@@ -127,7 +127,7 @@
     <None Include="Controllers\ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Editors\SerializedLookupEditor.cs" />
+    <Compile Include="Editors\SerializedListPropertyEditor.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Images\ReadMe.txt" />
