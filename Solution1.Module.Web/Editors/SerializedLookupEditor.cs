@@ -23,6 +23,7 @@ namespace Solution1.Module.Web
         }
 
         private string _DropDownId;
+        private char _SeparatorChar = ',';
 
         public void InstantiateIn(Control container)
         {
@@ -49,13 +50,18 @@ namespace Solution1.Module.Web
                     for(var i = 0; i < selectedItems.length; i++)
                         values.push(selectedItems[i].value);
 
-                    checkComboBox.SetText(values.join(','));
+                    checkComboBox.SetText(values.join('" + _SeparatorChar + @"'));
                 }";
         }
 
         public void SetDropDownId(string id)
         {
             _DropDownId = id;
+        }
+
+        public void SetSeparatorChar(char separatorChar)
+        {
+            _SeparatorChar = separatorChar;
         }
 
         public void SetValue(string value)
@@ -93,7 +99,7 @@ namespace Solution1.Module.Web
         protected override WebControl CreateEditModeControlCore()
         {
             DropDownControl = new ASPxDropDownEdit();
-            DropDownControl.ValueChanged += new EventHandler(ExtendedEditValueChangedHandler);
+            DropDownControl.ValueChanged += ExtendedEditValueChangedHandler;
             DropDownControl.EnableClientSideAPI = true;
             DropDownControl.DropDownWindowTemplate = ListBoxTemplate;
             DropDownControl.ClientInstanceName = "ListPropertyEditor_" + PropertyName;
@@ -106,7 +112,7 @@ namespace Solution1.Module.Web
             IEnumerable<T> datasource = GetDataSource();
             foreach (T item in datasource)
             {
-                ListBoxTemplate.Items.Add(GetDisplayText(item), GetDisplayValue(item));
+                var aaa = ListBoxTemplate.Items.Add(GetDisplayText(item), GetDisplayValue(item));
             }
 
             if (PropertyValue != null)
@@ -119,7 +125,7 @@ namespace Solution1.Module.Web
         {
             if (DropDownControl != null)
             {
-                DropDownControl.Enabled = !AllowEdit;
+                DropDownControl.Enabled = AllowEdit;
             }
         }
 
@@ -127,7 +133,7 @@ namespace Solution1.Module.Web
         {
             if (DropDownControl != null)
             {
-                DropDownControl.ValueChanged -= new EventHandler(ExtendedEditValueChangedHandler);
+                DropDownControl.ValueChanged -= ExtendedEditValueChangedHandler;
             }
 
             if (_ListBoxTemplate != null)
@@ -184,7 +190,7 @@ namespace Solution1.Module.Web
 
         protected override string GetDisplayText(Currency currency)
         {
-            return currency.Code + "\t" + currency.Name;
+            return String.Format("{0}\t{1}", currency.Code, currency.Name);
         }
 
         protected override string GetDisplayValue(Currency currency)
