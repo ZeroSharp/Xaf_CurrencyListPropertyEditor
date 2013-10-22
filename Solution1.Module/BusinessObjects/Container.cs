@@ -8,6 +8,18 @@ using DevExpress.Data.Filtering;
 
 namespace Solution1.Module.BusinessObjects
 {
+    //[DefaultClassOptions]
+    //public class Container: BaseObject {
+    //    public Container(Session session) : base(session) { }
+
+    //    public string Name;
+
+    //    [Association("List1Currencies")]
+    //    public XPCollection<Currency> List1 { 
+    //        get { return GetCollection<Currency>("List1"); }
+    //    }
+    //}
+
     [DefaultClassOptions]
     public class Container : BaseObject
     {

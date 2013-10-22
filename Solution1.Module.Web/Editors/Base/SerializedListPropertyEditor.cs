@@ -213,21 +213,4 @@ namespace Solution1.Module.Web
             }
         }
     }
-
-    [PropertyEditor(typeof(String), false)]
-    public class CurrencyListPropertyEditor : SerializedListPropertyEditor<Currency>
-    {
-        public CurrencyListPropertyEditor(Type objectType, IModelMemberViewItem info)
-            : base(objectType, info) { }
-
-        protected override string GetDisplayText(Currency currency)
-        {
-            return String.Format("{0}\t{1}", currency.Code, currency.Name);
-        }
-
-        protected override string GetValue(Currency currency)
-        {
-            return currency.Code;
-        }
-    }
 }
