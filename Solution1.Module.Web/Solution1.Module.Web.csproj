@@ -102,6 +102,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Editors\CurrencyListPropertyEditor.cs" />
     <Compile Include="WebModule.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -128,7 +129,7 @@
     <None Include="Controllers\ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Editors\SerializedListPropertyEditor.cs" />
+    <Compile Include="Editors\Base\SerializedListPropertyEditor.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Images\ReadMe.txt" />
