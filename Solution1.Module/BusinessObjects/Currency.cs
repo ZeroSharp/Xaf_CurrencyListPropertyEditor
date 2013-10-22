@@ -8,7 +8,6 @@ using DevExpress.Xpo;
 namespace Solution1.Module.BusinessObjects
 {
     [DefaultClassOptions]
-    //[ImageName("BO_Contact")]
     [DefaultProperty("Code")]
     public class Currency : BaseObject
     { 

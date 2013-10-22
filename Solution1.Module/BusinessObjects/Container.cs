@@ -4,6 +4,7 @@ using DevExpress.ExpressApp.Model;
 using DevExpress.Persistent.Base;
 using DevExpress.Persistent.BaseImpl;
 using DevExpress.Xpo;
+using DevExpress.Data.Filtering;
 
 namespace Solution1.Module.BusinessObjects
 {
@@ -13,6 +14,19 @@ namespace Solution1.Module.BusinessObjects
         public Container(Session session)
             : base(session)
         { }
+
+        private XPCollection<Currency> _AvailableCurrencies;
+        [MemberDesignTimeVisibility(false)]
+        [NonPersistent]
+        public XPCollection<Currency> AvailableCurrencies
+        {
+            get
+            {
+                if (_AvailableCurrencies == null)
+                    _AvailableCurrencies = new XPCollection<Currency>(Session, CriteriaOperator.Parse("Code like 'C%'"));
+                return _AvailableCurrencies;
+            }
+        }
 
         private string _CurrencyList;
         [ModelDefault("PropertyEditorType", "Solution1.Module.Web.CurrencyListPropertyEditor")]
@@ -28,30 +42,33 @@ namespace Solution1.Module.BusinessObjects
             }
         }
 
-        private string _CurrencyList2;
+        private string _CurrencyListWithCriteria;
         [ModelDefault("PropertyEditorType", "Solution1.Module.Web.CurrencyListPropertyEditor")]
-        public string CurrencyList2
+        [DataSourceCriteria("Code like 'S%'")]
+        public string CurrencyListWithCriteria
         {
             get
             {
-                return _CurrencyList2;
+                return _CurrencyListWithCriteria;
             }
             set
             {
-                SetPropertyValue("CurrencyList2", ref _CurrencyList2, value);
+                SetPropertyValue("CurrencyListWithCriteria", ref _CurrencyListWithCriteria, value);
             }
         }
 
-        private string _Name;
-        public string Name
+        private string _CurrencyListWithDataSource;
+        [ModelDefault("PropertyEditorType", "Solution1.Module.Web.CurrencyListPropertyEditor")]
+        [DataSourceProperty("AvailableCurrencies")]
+        public string CurrencyListWithDataSource
         {
             get
             {
-                return _Name;
+                return _CurrencyListWithDataSource;
             }
             set
             {
-                SetPropertyValue("Name", ref _Name, value);
+                SetPropertyValue("CurrencyListWithDataSource", ref _CurrencyListWithDataSource, value);
             }
         }
     }

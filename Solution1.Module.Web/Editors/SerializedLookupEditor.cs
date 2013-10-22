@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+using DevExpress.Data.Filtering;
 using DevExpress.ExpressApp;
 using DevExpress.ExpressApp.Editors;
 using DevExpress.ExpressApp.Model;
+using DevExpress.ExpressApp.Web.Editors;
 using DevExpress.ExpressApp.Web.Editors.ASPx;
 using DevExpress.Web.ASPxEditors;
 using Solution1.Module.BusinessObjects;
@@ -75,15 +78,48 @@ namespace Solution1.Module.Web
 
     public abstract class SerializedListPropertyEditor<T> : ASPxPropertyEditor, IComplexViewItem
     {
+        public class ListBoxItem
+        {
+            public string DisplayText { get; set; }
+            public string Value { get; set; }
+        }
+
         public SerializedListPropertyEditor(Type objectType, IModelMemberViewItem info)
             : base(objectType, info) { }
 
-        protected abstract IEnumerable<T> GetDataSource();
+        protected virtual IEnumerable<T> GetDataSource()
+        { 
+            if (Helper.IsPropertyDataSource)
+            {
+                var dataSource = Helper.CreateCollectionSource(this.CurrentObject);
+                var enumerable = dataSource.Collection as IEnumerable;
+                return enumerable.Cast<T>();
+            }
+            else
+            {
+                return ObjectSpace.GetObjects<T>(CriteriaOperator.Parse(this.Model.ModelMember.DataSourceCriteria));
+            }
+        }
+
+        private IEnumerable<ListBoxItem> GetListBoxItems()
+        {
+            IEnumerable<T> dataSource = GetDataSource();
+            return dataSource
+                .Select(_ =>
+                    new ListBoxItem()
+                    {
+                        DisplayText = GetDisplayText(_),
+                        Value = GetValue(_)
+                    })
+                .OrderBy(_ => _.DisplayText);
+        }
+
         protected abstract string GetDisplayText(T item);
-        protected abstract string GetDisplayValue(T item);
+        protected abstract string GetValue(T item);
 
         public IObjectSpace ObjectSpace { get; private set; }
         public ASPxDropDownEdit DropDownControl { get; private set; }
+        public LookupEditorHelper Helper { get; private set; }
 
         private SerializedListBoxTemplate _ListBoxTemplate;
         public SerializedListBoxTemplate ListBoxTemplate
@@ -93,6 +129,15 @@ namespace Solution1.Module.Web
                 if (_ListBoxTemplate == null)
                     _ListBoxTemplate = new SerializedListBoxTemplate();
                 return _ListBoxTemplate;
+            }
+        }
+
+        private void PopulateListBoxItems()
+        {
+            ListBoxTemplate.Items.Clear();
+            foreach (var item in GetListBoxItems())
+            {
+                ListBoxTemplate.Items.Add(item.DisplayText, item.Value);
             }
         }
 
@@ -106,14 +151,7 @@ namespace Solution1.Module.Web
             DropDownControl.ReadOnly = true;
 
             ListBoxTemplate.SetDropDownId(DropDownControl.ClientInstanceName);
-
-            ListBoxTemplate.Items.Clear();
-
-            IEnumerable<T> datasource = GetDataSource();
-            foreach (T item in datasource)
-            {
-                var aaa = ListBoxTemplate.Items.Add(GetDisplayText(item), GetDisplayValue(item));
-            }
+            PopulateListBoxItems();
 
             if (PropertyValue != null)
                 ListBoxTemplate.SetValue(PropertyValue.ToString());
@@ -147,6 +185,7 @@ namespace Solution1.Module.Web
        
         public void Setup(IObjectSpace objectSpace, XafApplication application)
         {
+            Helper = new WebLookupEditorHelper(application, objectSpace, MemberInfo.MemberTypeInfo, Model);
             ObjectSpace = objectSpace;
         }
 
@@ -181,19 +220,12 @@ namespace Solution1.Module.Web
         public CurrencyListPropertyEditor(Type objectType, IModelMemberViewItem info)
             : base(objectType, info) { }
 
-        protected override IEnumerable<Currency> GetDataSource() 
-        {
-            return ObjectSpace
-                .GetObjects<Currency>()
-                .OrderBy(x => x.Code);
-        }
-
         protected override string GetDisplayText(Currency currency)
         {
             return String.Format("{0}\t{1}", currency.Code, currency.Name);
         }
 
-        protected override string GetDisplayValue(Currency currency)
+        protected override string GetValue(Currency currency)
         {
             return currency.Code;
         }
